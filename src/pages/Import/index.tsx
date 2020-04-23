@@ -23,27 +23,37 @@ const Import: React.FC = () => {
   async function handleUpload(): Promise<void> {
     const data = new FormData();
 
-    console.log(uploadedFiles[0]);
+    async function processorArray(): Promise<void> {
+      // eslint-disable-next-line no-restricted-syntax
+      for (const uploadedFile of uploadedFiles) {
+        data.append('file', uploadedFile.file);
 
-    data.append('file', uploadedFiles);
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          await api.post('/transactions/import', data);
+        } catch (err) {
+          console.log(err);
+        }
 
-    console.log(data);
+        data.delete('file');
+      }
+    }
 
-    try {
-      await api
-        .post('/transactions/import  ', data, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        })
-        .then(response => {
-          console.log(response.data);
-        });
-    } catch (err) {}
+    await processorArray();
+
+    history.push('/');
   }
 
-  function submitFile(files: FileProps[]): void {
-    setUploadedFiles(files);
+  function submitFile(files: File[]): void {
+    files.forEach(file => {
+      const newFile: FileProps = {
+        file,
+        name: file.name,
+        readableSize: String(file.size),
+      };
+
+      setUploadedFiles([...uploadedFiles, newFile]);
+    });
   }
 
   return (
